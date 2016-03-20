@@ -1,5 +1,3 @@
-#include <stddef.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -12,8 +10,6 @@ char base64_encode_value(uint8_t value)
 }
 
 const char binary[16][5] = { "0000", "0001", "0010", "0011", "0100", "0101", "0110", "0111", "1000", "1001", "1010", "1011", "1100", "1101", "1110", "1111" };
-const char *digits = "0123456789abcdef";
-
 
 const char * hex2bin_char(int x)
 {
@@ -45,6 +41,7 @@ void bin2base64(char *str, char *res)
         }
       char *ptr;
       long ret;
+      //recognize string as base 2, and convert it to long value (base 10
       ret = strtol(bits, &ptr, 2);
       sprintf(res, "%s%c", res, base64_encode_value(ret));
     }  
