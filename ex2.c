@@ -7,9 +7,7 @@ const char binary[16][5] = { "0000", "0001", "0010", "0011", "0100", "0101", "01
 const char * hex2bin_char(int x)
 {
   if (x >= '0' && x <= '9') return binary[x - '0'];
-  
   if (x >= 'A' && x <= 'F') return binary[x - 'A' + 10];
-  
   return binary[x - 'a' + 10];
 }
 
@@ -30,8 +28,9 @@ void xor(char *str1, char *str2, char *res)
     {
       int a = str1[i];
       int b  = str2[i];
-      int xor = a ^ b;
-      sprintf(res, "%s%d", res, xor);
+      int xored = a ^ b;
+      sprintf(res, "%s%d", res, xored);
+      printf("a is %d, b is %d, xored is %d \n", a, b, xored);
     }
 }
 
@@ -52,8 +51,9 @@ void bin2hex_str(char *str, char *res)
         }
       char *ptr;
       long ret;
-      //recognize string as base 2, and convert it to long value (base 16)
+      //recognize string as base 2, 
       ret = strtol(bits, &ptr, 2);
+      //and convert it to long value (base 16)
       sprintf(res, "%s%c", res, hex_encode_value(ret));
     }  
 }

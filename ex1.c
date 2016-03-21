@@ -41,8 +41,9 @@ void bin2base64(char *str, char *res)
         }
       char *ptr;
       long ret;
-      //recognize string as base 2, and convert it to long value (base 10
+      //recognize string as base 2, 
       ret = strtol(bits, &ptr, 2);
+      //and convert it to long value (base 10)
       sprintf(res, "%s%c", res, base64_encode_value(ret));
     }  
 }
