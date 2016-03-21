@@ -15,7 +15,8 @@ const char * hex2bin_char(int x)
 
 void hex2bin_str(char *str, char *res)
 {
-  for (int i = 0; i < strlen(str); i+=2)
+  int len = strlen(str);
+  for (int i = 0 ; i < len ; i+=2)
     {
       int byte1 = str[i];
       int byte2 = str[i+1];
@@ -27,7 +28,8 @@ void hex2bin_str(char *str, char *res)
 void xor(char *str1, char* str2, char *res)
 {
   // assume that both str1 and str2 are of equal length
-  for(int i = 0; i < strlen(str1); i++)
+  int len = strlen(str1);
+  for(int i = 0 ; i < len; i++)
     {
       int a = str1[i];
       int b  = str2[i];
@@ -39,7 +41,8 @@ void xor(char *str1, char* str2, char *res)
 //65 to 90, 97 to 122 are alphabetical characters
 void single_byte_xor(char *str, char *byte_cipher, char *res)
 {
-  for (int i = 0; i < strlen(str); i+=8)
+  int len = strlen(str);
+  for (int i = 0 ; i < len ; i+=8)
     {
       char encoded[9] = {};
       char decoded[9] = {};
@@ -63,20 +66,13 @@ void num2bin_byte(int num, char *str)
     {
       //& is AND, ! is NOT, 
       *str++ = !!(mask & num) + '0';
-      /*
-      printf("mask is %d \n", mask);
-      printf("num is %d \n", num);
-      printf("(mask & num) is %d \n", (mask & num));
-      printf("!(mask & num) is %d \n", !(mask & num));
-      printf("!!(mask & num) is %d \n", !!(mask & num));
-      printf("!!(mask & num) + '0' is %d \n\n", !!(mask & num) + '0');
-      */
     }
 }
 
 void bin2ascii(char *bin, char *res)
 {
-  for (int i = 0; i < strlen(bin); i+=8)
+  int len = strlen(bin);
+  for (int i = 0 ; i < len ; i+=8)
     {
       char buf[9] = {};
       long ret;
@@ -96,7 +92,8 @@ void bin2ascii(char *bin, char *res)
 float score(char *str)
 {
   float acc = 0;
-  for (int i = 0 ; i < strlen(str) ; i++)
+  int len = strlen(str);
+  for (int i = 0 ; i < len ; i++)
     {
       switch(str[i])
         {
@@ -228,32 +225,48 @@ int compare(const void *s1, const void *s2)
 
 int main()
 {
-  char* hex = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736";
-
+  FILE *ptr_file;
+  char buf[1000];
   char bin1[1024] = {};
   char res[1024] = {};
   char byte[9] = {};
   char *msg;
-  struct possibility possibilities[256];
+  struct possibility possibilities[83712];
 
-  hex2bin_str(hex, bin1);
-  for (int i = 0 ; i < 256 ; i++)
+  ptr_file =fopen("ex4.txt","r");
+  if (!ptr_file)
+    return 1;
+
+  int j = 0;
+  msg = (char *)malloc(32);
+
+  while (fgets(buf,60, ptr_file)!=NULL)
     {
-      msg = (char *)malloc(1024);
-      num2bin_byte(i, byte);
-      single_byte_xor(bin1, byte, res);
-      bin2ascii(res, msg);
-      possibilities[i].score = score(msg);
-      possibilities[i].msg = msg;
+      //printf("%s",buf);
+      hex2bin_str(buf, bin1);
+      for (int i = 0 ; i < 256 ; i++)
+        {
+          msg = malloc(32);
+          num2bin_byte(i, byte);
+          single_byte_xor(bin1, byte, res);
+          bin2ascii(res, msg);
+          possibilities[i+j].score = score(msg);
+          possibilities[i+j].msg = msg;
+          printf("%d\n", (i+j));
+        }
+      printf("next line \n");
+      j+=256;
+      free(msg);
     }
-  free(msg);
-  qsort(possibilities, 256, sizeof(struct possibility), compare);
 
-  //print the top 10 values only
-  for (int i = 0 ; i < 10 ; i++)
+  qsort(possibilities, 83712, sizeof(struct possibility), compare);
+
+  //print the top 250 values only
+  for (int i = 0 ; i < 500 ; i++)
     {
       printf("msg = %s, score = %f \n", possibilities[i].msg, possibilities[i].score);
     }
 
+  fclose(ptr_file);
   return 0;
 }
