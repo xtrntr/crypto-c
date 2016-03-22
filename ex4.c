@@ -25,38 +25,22 @@ void hex2bin_str(char *str, char *res)
     }
 }
 
-void xor(char *str1, char* str2, char *res)
-{
-  // assume that both str1 and str2 are of equal length
-  int len = strlen(str2);
-  for(int i = 0 ; i < len; i++)
-    {
-      int a = str1[i];
-      int b  = str2[i];
-      int xored = a ^ b;
-      sprintf(res, "%s%d", res, xored);
-    }
-}
-
 //65 to 90, 97 to 122 are alphabetical characters
-void single_byte_xor(char *bin, char *byte_cipher, char *res)
+char *single_byte_xor(char *bin, char *byte_cipher)
 {
   int len = strlen(bin);
   char encoded[8];
-  char decoded[8];
-  char temp[len];
+  char *decoded;
+  char *temp = malloc(len+1);
   for (int i = 0 ; i < len ; i+=8)
     {
       for (int j = 0; j < 8; j++)
-        { 
-          encoded[j] = bin[i+j];
-        }
-      xor(encoded, byte_cipher, decoded);
-      for (int j = 0; j < 8; j++)
-        { 
-          temp[i+j] = decoded[j];
+        {  
+          int xored = (bin[i+j] ^ byte_cipher[j]) + '0';
+          temp[i+j] = xored;
         }
     }
+  return temp;
 }
 
 // still not very clear how this bit shifting magic works
@@ -72,25 +56,33 @@ void num2bin_byte(int num, char *str)
     }
 }
 
-void bin2ascii(char *bin, char *res)
+char *bin2ascii(char *bin)
 {
   int len = strlen(bin);
-  char *buf;
+  int ascii_len = len/8;
+  char *temp = malloc(ascii_len+1);
+  char index = 0;
+  char buf[9];
+  char *ascii;
+  printf("len: %d\n", len);
   for (int i = 0 ; i < len ; i+=8)
     {
       long ret;
       char *ptr;
-      buf = calloc(1,8);
+      ascii = malloc(1);
       for (int j = 0; j < 8; j++)
         {
-          buf[j] = bin[i+j]; 
+          buf[j] = bin[i+j];
         }
       //recognize string as base 2, 
-      ret = strtol(buf, &ptr, 2);
+      ret = strtol(buf, &ptr, 2); 
       //and convert it to ascii character 
-      sprintf (res, "%s%c", res, ret); 
+      sprintf(ascii, "%c", ret);
+      temp[index] = ascii[0];
+      index++;
     }
-  //free(buf);
+  free(ascii);
+  return temp;
 }
 
 //crappy scoring, but whatever works
@@ -240,7 +232,6 @@ int main()
 
   int j = 0;
   char *msg;
-  char *res;
   char *buf;
   char *bin1;
     
@@ -251,20 +242,18 @@ int main()
         {
           bin1 = calloc(1,240);
           hex2bin_str(buf, bin1);
-          printf("line: %d, bin1len: %lu \n", (j/256),  strlen(bin1));
-          printf("bin1: %s \n", bin1);
           for (int i = 0 ; i < 256 ; i++)
             { 
-              char byte[8] = {};
-              res = calloc(1,240);
+              char byte[8];
+              char *res;
+              char *res2;
               msg = calloc(1,30);
               num2bin_byte(i, byte);
-              printf("before: bin1len: %lu, reslen: %lu \n", strlen(bin1), strlen(res));
-              single_byte_xor(bin1, byte, res);
-              printf("before: bin1len: %lu, reslen: %lu \n", strlen(bin1), strlen(res));
-              bin2ascii(res, msg);
-              //possibilities[i+j].msg = msg;
-              //possibilities[i+j].score = score(msg);
+              res = single_byte_xor(bin1, byte);
+              res2 = bin2ascii(res);
+              //printf("ascii: %s, strlen: %lu\n", res2, strlen(res2));
+              possibilities[i+j].msg = res2;
+              possibilities[i+j].score = score(res2);
               if ( i+j > 0 )
                 {
                   //printf("%lu\n", strlen(possibilities[i+j-1].msg));
@@ -282,7 +271,7 @@ int main()
     //print the top 250 values only
     for (int i = 0 ; i < 50 ; i++)
     {
-    printf("len = %lu, msg = %f \n", strlen(possibilities[i].msg), possibilities[i].score);
+    printf("msg = %s, msg = %f \n", possibilities[i].msg, possibilities[i].score);
     }
 
   fclose(ptr_file);
