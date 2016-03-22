@@ -28,7 +28,7 @@ void hex2bin_str(char *str, char *res)
 void xor(char *str1, char* str2, char *res)
 {
   // assume that both str1 and str2 are of equal length
-  int len = strlen(str1);
+  int len = strlen(str2);
   for(int i = 0 ; i < len; i++)
     {
       int a = str1[i];
@@ -39,20 +39,23 @@ void xor(char *str1, char* str2, char *res)
 }
 
 //65 to 90, 97 to 122 are alphabetical characters
-void single_byte_xor(char *str, char *byte_cipher, char *res)
+void single_byte_xor(char *bin, char *byte_cipher, char *res)
 {
-  int len = strlen(str);
+  int len = strlen(bin);
+  char encoded[8];
+  char decoded[8];
+  char temp[len];
   for (int i = 0 ; i < len ; i+=8)
     {
-      char encoded[9] = {};
-      char decoded[9] = {};
       for (int j = 0; j < 8; j++)
-        {
-          sprintf(encoded, "%s%c", encoded, str[i+j]);
+        { 
+          encoded[j] = bin[i+j];
         }
-      //tested up to 0010 0000
       xor(encoded, byte_cipher, decoded);
-      sprintf(res, "%s%s", res, decoded);
+      for (int j = 0; j < 8; j++)
+        { 
+          temp[i+j] = decoded[j];
+        }
     }
 }
 
@@ -72,11 +75,12 @@ void num2bin_byte(int num, char *str)
 void bin2ascii(char *bin, char *res)
 {
   int len = strlen(bin);
+  char *buf;
   for (int i = 0 ; i < len ; i+=8)
     {
-      char buf[9] = {};
       long ret;
       char *ptr;
+      buf = calloc(1,8);
       for (int j = 0; j < 8; j++)
         {
           buf[j] = bin[i+j]; 
@@ -86,6 +90,7 @@ void bin2ascii(char *bin, char *res)
       //and convert it to ascii character 
       sprintf (res, "%s%c", res, ret); 
     }
+  //free(buf);
 }
 
 //crappy scoring, but whatever works
@@ -226,11 +231,7 @@ int compare(const void *s1, const void *s2)
 int main()
 {
   FILE *ptr_file;
-  char buf[1000];
-  char bin1[1024] = {};
-  char res[1024] = {};
-  char byte[9] = {};
-  char *msg;
+  //should be 83712
   struct possibility possibilities[83712];
 
   ptr_file =fopen("ex4.txt","r");
@@ -238,33 +239,50 @@ int main()
     return 1;
 
   int j = 0;
-  msg = (char *)malloc(32);
-
-  while (fgets(buf,60, ptr_file)!=NULL)
+  char *msg;
+  char *res;
+  char *buf;
+  char *bin1;
+    
+  buf = malloc(61);
+  while (fgets(buf,61, ptr_file)!=NULL)
     {
-      //printf("%s",buf);
-      hex2bin_str(buf, bin1);
-      for (int i = 0 ; i < 256 ; i++)
+      if (strcmp(buf, "\n"))
         {
-          msg = malloc(32);
-          num2bin_byte(i, byte);
-          single_byte_xor(bin1, byte, res);
-          bin2ascii(res, msg);
-          possibilities[i+j].score = score(msg);
-          possibilities[i+j].msg = msg;
-          printf("%d\n", (i+j));
+          bin1 = calloc(1,240);
+          hex2bin_str(buf, bin1);
+          printf("line: %d, bin1len: %lu \n", (j/256),  strlen(bin1));
+          printf("bin1: %s \n", bin1);
+          for (int i = 0 ; i < 256 ; i++)
+            { 
+              char byte[8] = {};
+              res = calloc(1,240);
+              msg = calloc(1,30);
+              num2bin_byte(i, byte);
+              printf("before: bin1len: %lu, reslen: %lu \n", strlen(bin1), strlen(res));
+              single_byte_xor(bin1, byte, res);
+              printf("before: bin1len: %lu, reslen: %lu \n", strlen(bin1), strlen(res));
+              bin2ascii(res, msg);
+              //possibilities[i+j].msg = msg;
+              //possibilities[i+j].score = score(msg);
+              if ( i+j > 0 )
+                {
+                  //printf("%lu\n", strlen(possibilities[i+j-1].msg));
+                }
+              
+            }
+          j+=256;
         }
-      printf("next line \n");
-      j+=256;
-      free(msg);
+      buf = calloc(1,70);
     }
 
-  qsort(possibilities, 83712, sizeof(struct possibility), compare);
 
-  //print the top 250 values only
-  for (int i = 0 ; i < 500 ; i++)
+    qsort(possibilities, 83712, sizeof(struct possibility), compare);
+
+    //print the top 250 values only
+    for (int i = 0 ; i < 50 ; i++)
     {
-      printf("msg = %s, score = %f \n", possibilities[i].msg, possibilities[i].score);
+    printf("len = %lu, msg = %f \n", strlen(possibilities[i].msg), possibilities[i].score);
     }
 
   fclose(ptr_file);
