@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 char *ascii2bin(char *ascii)
 {
@@ -18,15 +19,67 @@ char *ascii2bin(char *ascii)
     }
   return out;
 }
+
+char *repeating_key_xor(char *key, char* inp)
+{
+  // assume key is a factor of inp, skip error checking
+  int len = strlen(inp);
+  char *out = malloc(len+1);
+  out[len*8] = 0;
+  for (int i = 0; i<(len/8); i++)
+    {
+      for (int j = 0; j<8; j++) 
+        {
+          //xor it and then make it an ASCII digit with '0'
+          out[i*8+j] = (inp[i+j] ^ key[j]) + '0';
+        }
+    }
+  return out;
+}
+
+char *bin2hex(char *bin)
+{
+  int len = strlen(bin);
+  char *out = malloc(len/4+1);
+  out[len/4] = 0;
+  for (int i = 0; i<(len/4); i++)
+    {
+      int hex_val = 0;
+      for (int j = 0; j<4; j++) 
+        {
+          if (bin[i*4+j] - '0' == 1) { hex_val += pow(2,3-j); }
+        }
+      switch(hex_val)
+        {
+        case 10: out[i] = 'a';
+        case 11: out[i] = 'b';
+        case 12: out[i] = 'c';
+        case 13: out[i] = 'd';
+        case 14: out[i] = 'e';
+        case 15: out[i] = 'f';
+        default: out[i] = 'z';
+        }
+      printf("%d -> %c \n", hex_val, out[i]);
+    }
+  return out;
+}
  
 int main ()
 {
   
-  char* str = "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal";
-  char* key = "ICE";
-  char* bin = malloc(1000);
-  bin = ascii2bin(key);
-  printf("%s\n", bin);
+  char* ascii_str = "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal";
+  char* bin_str = malloc(strlen(ascii_str)*8+1);
+  char* ascii_key = "ICE";
+  char* bin_key = malloc(strlen(ascii_key)*8+1);
+  bin_key = ascii2bin(ascii_key);
+  bin_str = ascii2bin(ascii_str);
+  
+  char* bin_encrypted = malloc(strlen(ascii_str)*8+1);
+  bin_encrypted = repeating_key_xor(bin_key, bin_str);
+  char* hex_encrypted = malloc(strlen(ascii_str)*4+1);
+  hex_encrypted = bin2hex(bin_encrypted);
+  
+  printf("%s\n", hex_encrypted);
 
   return 0;
 }
