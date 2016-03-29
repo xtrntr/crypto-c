@@ -24,6 +24,8 @@ char *repeating_key_xor(char *key, char* inp)
 {
   // assume key is a factor of inp, skip error checking
   int len = strlen(inp);
+  int key_len = strlen(key)/8;
+  int curr_index = 0;
   char *out = malloc(len+1);
   out[len*8] = 0;
   for (int i = 0; i<(len/8); i++)
@@ -31,8 +33,10 @@ char *repeating_key_xor(char *key, char* inp)
       for (int j = 0; j<8; j++) 
         {
           //xor it and then make it an ASCII digit with '0'
-          out[i*8+j] = (inp[i+j] ^ key[j]) + '0';
+          out[i*8+j] = (inp[i*8+j] ^ key[j+8*curr_index]) + '0';
         }
+      curr_index += 1;
+      if (curr_index > key_len - 1) { curr_index = 0; }
     }
   return out;
 }
@@ -51,15 +55,14 @@ char *bin2hex(char *bin)
         }
       switch(hex_val)
         {
-        case 10: out[i] = 'a';
-        case 11: out[i] = 'b';
-        case 12: out[i] = 'c';
-        case 13: out[i] = 'd';
-        case 14: out[i] = 'e';
-        case 15: out[i] = 'f';
-        default: out[i] = 'z';
+        case 10: out[i] = 'a'; break;
+        case 11: out[i] = 'b'; break;
+        case 12: out[i] = 'c'; break;
+        case 13: out[i] = 'd'; break;
+        case 14: out[i] = 'e'; break;
+        case 15: out[i] = 'f'; break;
+        default: out[i] = hex_val + '0';
         }
-      printf("%d -> %c \n", hex_val, out[i]);
     }
   return out;
 }
@@ -71,15 +74,14 @@ int main ()
   char* bin_str = malloc(strlen(ascii_str)*8+1);
   char* ascii_key = "ICE";
   char* bin_key = malloc(strlen(ascii_key)*8+1);
+  char* bin_encrypted = malloc(strlen(ascii_str)*8+1);
+  char* hex_encrypted = malloc(strlen(ascii_str)*4+1);
   bin_key = ascii2bin(ascii_key);
   bin_str = ascii2bin(ascii_str);
-  
-  char* bin_encrypted = malloc(strlen(ascii_str)*8+1);
   bin_encrypted = repeating_key_xor(bin_key, bin_str);
-  char* hex_encrypted = malloc(strlen(ascii_str)*4+1);
   hex_encrypted = bin2hex(bin_encrypted);
   
-  printf("%s\n", hex_encrypted);
+  printf("ENCRYPT\n\n%s\n\nTO\n\n%s\n", ascii_str, hex_encrypted);
 
   return 0;
 }
