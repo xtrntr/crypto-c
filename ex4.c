@@ -26,7 +26,7 @@ void hex2bin_str(char *str, char *res)
 }
 
 //65 to 90, 97 to 122 are alphabetical characters
-char *single_byte_xor(char *bin, char *byte_cipher)
+const char * single_byte_xor(char *bin, char *byte_cipher)
 {
   int len = strlen(bin);
   char encoded[8];
@@ -64,7 +64,6 @@ char *bin2ascii(char *bin)
   char index = 0;
   char buf[9];
   char *ascii;
-  printf("len: %d\n", len);
   for (int i = 0 ; i < len ; i+=8)
     {
       long ret;
@@ -251,13 +250,8 @@ int main()
               num2bin_byte(i, byte);
               res = single_byte_xor(bin1, byte);
               res2 = bin2ascii(res);
-              //printf("ascii: %s, strlen: %lu\n", res2, strlen(res2));
               possibilities[i+j].msg = res2;
               possibilities[i+j].score = score(res2);
-              if ( i+j > 0 )
-                {
-                  //printf("%lu\n", strlen(possibilities[i+j-1].msg));
-                }
               
             }
           j+=256;
@@ -265,13 +259,12 @@ int main()
       buf = calloc(1,70);
     }
 
-
     qsort(possibilities, 83712, sizeof(struct possibility), compare);
 
-    //print the top 250 values only
-    for (int i = 0 ; i < 50 ; i++)
+    //print the top 5 values only
+    for (int i = 0 ; i < 5 ; i++)
     {
-    printf("msg = %s, msg = %f \n", possibilities[i].msg, possibilities[i].score);
+    printf("score = %f, msg = %s \n", possibilities[i].score, possibilities[i].msg);
     }
 
   fclose(ptr_file);

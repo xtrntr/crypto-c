@@ -52,7 +52,7 @@ int main()
 {
 
   char* msg = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
-    
+
   char res1[1024] = {};
   char res2[1024] = {};
   hex2bin_str(msg, res1);
