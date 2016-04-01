@@ -263,9 +263,9 @@ int main()
 
     //print the top 5 values only
     for (int i = 0 ; i < 5 ; i++)
-    {
-    printf("score = %f, msg = %s \n", possibilities[i].score, possibilities[i].msg);
-    }
+      {
+        printf("score = %f, msg = %s \n", possibilities[i].score, possibilities[i].msg);
+      }
 
   fclose(ptr_file);
   return 0;
