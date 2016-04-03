@@ -109,7 +109,9 @@ char *base64_to_hex(char* inp)
           if ( inp[i] != '=' )
             {
               for(int j=0;j<64;j++)
-                { if ( inp[i*4+k] == encoding[j] ) {val = j; break;} }
+                { 
+                  if ( inp[i*4+k] == encoding[j] ) {val = j; break;} 
+                }
             }
           
           // convert each char into strings of 6 binary bits
@@ -142,6 +144,7 @@ struct possibility
   float score;
 };
 
+
 int compare(const void *s1, const void *s2)
 {
   struct possibility *e1 = (struct possibility *)s1;
@@ -151,6 +154,133 @@ int compare(const void *s1, const void *s2)
     return 1; 
   else
     return scorecompare;
+}
+
+char *num2bin_byte(int num)
+{
+  char *str = calloc(9, sizeof(char));
+  str[8] = '\0';
+  //0x1000 = 16^3, 0x0100 = 16^2, 0x0010 = 16^1, 0x0000 = 16^0
+  int mask = 0x0100>>1;
+  // shift and assign
+  for (int i=0;i<8;i++)
+    {
+      str[i] = !!(mask>>i & num) + '0';
+    }
+  return str;
+}
+
+unsigned int round_div(unsigned int dividend, unsigned int divisor)
+{
+  if ( (divisor % dividend) == 0 )
+    {
+     return (dividend / divisor);
+       }
+  else
+    {
+  return (dividend / divisor) + 1;
+    }
+}
+
+float score(char *str)
+{
+  float acc = 0;
+  int len = strlen(str);
+  for (int i = 0 ; i < len ; i++)
+    {
+      switch(str[i])
+        {
+        case 'e' : acc+=12.7;
+        case 't' : acc+=9;
+        case 'a' : acc+=8.2;
+        case 'o' : acc+=7.5;
+        case 'i' : acc+=7;
+        case 'n' : acc+=6.7;
+        case 's' : acc+=6.3;
+        case 'h' : acc+=6;
+        case 'r' : acc+=6;
+        case 'd' : acc+=4.3;
+        case 'l' : acc+=4;
+        case 'c' : acc+=2.7;
+        case 'u' : acc+=2.7;
+        case 'm' : acc+=2.4;
+        case 'w' : acc+=2.3;
+        case 'f' : acc+=2.2;
+        case 'y' : acc+=2;
+        case 'p' : acc+=1.9;
+        case 'b' : acc+=1.5;
+        case 'v' : acc+=1;
+        case 'k' : acc+=0.9;
+        case 'j' : acc+=0.7;
+        case 'x' : acc+=0.2;
+        case 'q' : acc+=0.2;
+        case 'z' : acc+=0.1;
+        case 'E' : acc+=12.7;
+        case 'T' : acc+=9;
+        case 'A' : acc+=8.2;
+        case 'O' : acc+=7.5;
+        case 'I' : acc+=7;
+        case 'N' : acc+=6.7;
+        case 'S' : acc+=6.3;
+        case 'H' : acc+=6;
+        case 'R' : acc+=6;
+        case 'D' : acc+=4.3;
+        case 'L' : acc+=4;
+        case 'C' : acc+=2.7;
+        case 'U' : acc+=2.7;
+        case 'M' : acc+=2.4;
+        case 'W' : acc+=2.3;
+        case 'F' : acc+=2.2;
+        case 'Y' : acc+=2;
+        case 'P' : acc+=1.9;
+        case 'B' : acc+=1.5;
+        case 'V' : acc+=1;
+        case 'K' : acc+=0.9;
+        case 'J' : acc+=0.7;
+        case 'X' : acc+=0.2;
+        case 'Q' : acc+=0.2;
+        case 'Z' : acc+=0.1;
+        case ' ' : acc+=5;
+        default : acc-=5;
+        }
+    }
+  return acc;
+}
+
+struct score
+{
+  float score;
+  int key; // 0 - 255
+};
+
+// takes a hex string, returns an ascii string
+char *xor_string(char *str, char *key)
+{
+  int len = strlen(str);
+  char *out = calloc(len/2+1, sizeof(char));
+  for(int i=0;i<len;i+=2)
+    {
+      char *temp = malloc(9);
+      strcat(temp, hex2bin_char(str[i]));
+      strcat(temp, hex2bin_char(str[i+1]));
+      temp[8] = '\0';
+      char xored[9] = {};
+      int count = 0;
+      for (int j=0;j<8;j++)
+        {
+          if ( ((temp[j] - '0') ^ (key[j] - '0')) == 1)
+            {
+              count += pow(2, 7-j);
+            }
+          xored[j] = ((temp[j] - '0') ^ (key[j] - '0')) + '0';
+        }
+      xored[8] = '\0';
+      //printf("%d\nstr %s\nkey %s\nxor %s\n", i, temp, key, xored);
+      out[i/2] = count;
+    }
+  out[len/2] = '\0';
+  //printf("\norig %s\nafter %s\n\n", str, out);
+  return out;
 }
 
 int main()
@@ -171,46 +301,118 @@ int main()
   while (fgets(buf,61, ptr_file)!=NULL)
     {
       if (strcmp(buf, "\n"))
-        {
-          //printf("%d\n", edit_distance(base64_to_hex(buf), 29));
-          strcat(full_file, base64_to_hex(buf));
-        }
+        { strcat(full_file, base64_to_hex(buf)); }
     }
   fclose(ptr_file);
-  int x = 0;
+
+  //score possibilities by the lowest edit distance
   for(int i = 0;i<key_permutations;i++)
     {
       possibilities[i].keysize = i+2;
       possibilities[i].score = edit_distance(full_file, i+2);
-      if ( edit_distance(full_file, i+2) != possibilities[i].score ) 
-        {
-          printf("for i of %d, edit dist is : %f and %f \n", i+2, edit_distance(full_file, i+2), possibilities[i].score);
-        }
-      x ++;
     }
 
   qsort(possibilities, key_permutations, sizeof(struct possibility), compare);
 
   int keysize_results[3];
-  //print the top 5 values only
+  //print the top 3 values only; the smaller the edit distance, the better.
   for (int i = 0 ; i < 3 ; i++)
     {
-      //printf("score = %f, keysize = %d \n", possibilities[i].score, possibilities[i].keysize);
       keysize_results[i] = possibilities[i].keysize;
+      //printf("keysize : %d\n", keysize_results[i]);
     }
 
   //transpose the blocks
-
-  int keysize = keysize_results[0];
-  int file_hex_length = strlen(full_file);
-  printf("full_text %s\n", full_file);
+  int keysize = keysize_results[0]; // 29
+  int file_hex_length = strlen(full_file); // 5754
   char *part1 = calloc(keysize+1, sizeof(char));
-  printf("num iterations : %d\n", file_hex_length/keysize);
-  for(int i = 0;i<file_hex_length;i+=keysize)
+  int len_transposed = round_div(file_hex_length, keysize)+1; // 199->200
+  char transposed[keysize][len_transposed+1];
+  int byte_num = 0;
+  int odd_num = 0;
+  if ( (keysize % 2) == 1 ) { odd_num = 1; }
+  
+  memset(transposed, 0, keysize*(len_transposed+1)*sizeof(char));
+
+  //transpose
+  for(int i=0;i<file_hex_length;i+=keysize*2)
     {
-      printf("part %d, strlen %lu, str %s\n", i/keysize, strlen(strncpy(part1, full_file+i, keysize)), strncpy(part1, full_file+i, keysize)); 
+      char* chunk = calloc(keysize*2+1, sizeof(char));
+      chunk[keysize] = '\0';
+      strncpy(chunk, full_file+i, keysize*2);
+      //printf("chunk %s index %d\n", chunk, i/(keysize*2));
+      // byte by byte is 2 hex chars at a time.
+      for(int j=0;j<keysize*2;j+=2)
+        {
+          if ( strlen(chunk) == keysize*2 ) 
+            {
+              transposed[j/2][byte_num] = chunk[j];
+              //printf("1 transposed[%d][%d] = %c\n", j/2, byte_num, chunk[j]);
+              transposed[j/2][byte_num+1] = chunk[j+1];
+              //printf("2 transposed[%d][%d] = %c\n", j/2, byte_num+1, chunk[j+1]);
+            }
+          else
+            {
+              if ( chunk[j] == 0 ) 
+                { 
+                  transposed[j/2][byte_num] = '\0';
+                  //printf("3 transposed[%d][%d] end\n", j/2, byte_num);
+                }
+              else if ( chunk[j+1] == 0 )
+                {
+                  transposed[j/2][byte_num] = chunk[j];
+                  transposed[j/2][byte_num+1] = '\0';
+                  //printf("4 transposed[%d][%d] = %c\n", j/2, byte_num, chunk[j]);
+                  //printf("3 transposed[%d][%d] end\n", j/2, byte_num+1);
+                }
+              else
+                {
+                  transposed[j/2][byte_num] = chunk[j];
+                  transposed[j/2][byte_num+1] = chunk[j+1];
+                  transposed[j/2][byte_num+2] = '\0';
+                  //printf("5 transposed[%d][%d] = %c\n", j/2, byte_num, chunk[j]);
+                  //printf("5 transposed[%d][%d] = %c\n", j/2, byte_num+1, chunk[j+1]);
+                  //printf("3 transposed[%d][%d] end\n", j/2, byte_num+2);
+                }
+            }
+        }
+      byte_num+=2;
     }
   
+  //printf("%d %d %d\n", file_hex_length, len_transposed, keysize);
+   
+  // solve each block as if it were single key XOR
+  // find the key that yields the highest score (we use a function to score how close the distribution of chars is to the english language
+  char *key = calloc(keysize+1, sizeof(char));
+  for(int j=0;j<keysize;j++)
+    {
+      struct score store;
+      store.score = -999999;
+      for (int i=0;i<256;i++)
+        {
+          char *byte_key = num2bin_byte(i);
+          float temp_score = score(xor_string(transposed[j], byte_key));
+          //printf("ori %s\nxor %s\n\n", transposed[j], xor_string(transposed[j], byte_key));
+          if ( temp_score > store.score ) 
+            {
+              //printf("new score: %f\n", temp_score);
+              store.key = i;
+              store.score = temp_score;
+            } 
+          else
+            {
+              //printf("%d %f\n", temp_score, store.score);
+            }
+        }
+      //printf("index %d, strlen %lu, score %f, key %c\n", j, strlen(transposed[j]), store.score, store.key); 
+      key[j] = store.key;
+    }
+  key[keysize] = '\0';
+  printf("key %s , len %lu \n", key, strlen(key));
+  //index 1 should be T, or 84
+  
+  char *key_bin = ascii2bin(key);
+
   return 0;
 
 }
