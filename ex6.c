@@ -297,7 +297,8 @@ int main()
     return 1;
   
   char buf[61] = {};
-  char *full_file = calloc(54 * 61, sizeof(char));
+  int file_len = 54*61;
+  char *full_file = calloc(file_len, sizeof(char));
   while (fgets(buf,61, ptr_file)!=NULL)
     {
       if (strcmp(buf, "\n"))
@@ -324,9 +325,9 @@ int main()
 
   //transpose the blocks
   int keysize = keysize_results[0]; // 29
-  int file_hex_length = strlen(full_file); // 5754
+  int file_hex_len = strlen(full_file); // 5754
   char *part1 = calloc(keysize+1, sizeof(char));
-  int len_transposed = round_div(file_hex_length, keysize)+1; // 199->200
+  int len_transposed = round_div(file_hex_len, keysize)+1; // 199->200
   char transposed[keysize][len_transposed+1];
   int byte_num = 0;
   int odd_num = 0;
@@ -335,7 +336,7 @@ int main()
   memset(transposed, 0, keysize*(len_transposed+1)*sizeof(char));
 
   //transpose
-  for(int i=0;i<file_hex_length;i+=keysize*2)
+  for(int i=0;i<file_hex_len;i+=keysize*2)
     {
       char* chunk = calloc(keysize*2+1, sizeof(char));
       chunk[keysize] = '\0';
@@ -379,10 +380,10 @@ int main()
       byte_num+=2;
     }
   
-  //printf("%d %d %d\n", file_hex_length, len_transposed, keysize);
+  //printf("%d %d %d\n", file_hex_len, len_transposed, keysize);
    
   // solve each block as if it were single key XOR
-  // find the key that yields the highest score (we use a function to score how close the distribution of chars is to the english language
+  // find the key that yields the highest score (we use score to determine how similar the distribution of chars is to the english language
   char *key = calloc(keysize+1, sizeof(char));
   for(int j=0;j<keysize;j++)
     {
@@ -408,10 +409,35 @@ int main()
       key[j] = store.key;
     }
   key[keysize] = '\0';
-  printf("key %s , len %lu \n", key, strlen(key));
-  //index 1 should be T, or 84
+  //printf("key %s , len %lu \n", key, strlen(key));
   
-  char *key_bin = ascii2bin(key);
+  int key_bin_len = keysize*8;
+  char *key_bin = calloc(key_bin_len+1, sizeof(char));
+  key_bin[key_bin_len] = '\0';
+  for(int i=0;i<key_bin_len;i++)
+    {
+      strcat(key_bin, num2bin_byte(key[i]));
+    }
+  //printf("%s\n", key_bin);
+  char *decrypted = calloc(file_hex_len+1, sizeof(char));
+  decrypted[file_hex_len] = '\0';
+  
+  printf("%s\n", full_file);
+  for(int i=0;i<file_hex_len;i+=keysize*2)
+    {
+      char *chunk = calloc(keysize*2+1, sizeof(char));
+      chunk[keysize*2] = '\0';
+      strncpy(chunk, full_file+i, keysize*2);
+      for(int j=0;j<keysize*2;j+=2)
+        {
+          char *byte = calloc(3, sizeof(char));
+          byte[0] = chunk[j];
+          byte[1] = chunk[j+1];
+          byte[2] = '\0';
+          strcat(decrypted, xor_string(byte, num2bin_byte(key[j/2])));
+        }
+     }
+  printf("%s\n", decrypted);
 
   return 0;
 
